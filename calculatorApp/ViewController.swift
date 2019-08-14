@@ -12,33 +12,40 @@ class ViewController: UIViewController {
     
     var numberOnScreen: Double = 0    // 画面に表示されている数字
     var previousNumber: Double = 0    // 前回表示されていた数字
+    var inValue = false    // 数値が入力されたかどうかの判断値（真偽値）
     var performingMath = false    // 計算プロセスに進んでいいかの判断値（真偽値）
     var operation = 0    // +, -, ×, ÷
-
+    
     @IBOutlet weak var label: UILabel!
- 
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         label.text = ""
     }
-
-    // 数字ボタン
+    
+    // 【数字ボタンを押した時】の処理
     @IBAction func buttonNum(_ sender: UIButton) {
         if performingMath == true {
-            label.text = String(sender.tag)
-            numberOnScreen = Double(label.text!)!
+            // +, -, *, / が押されていた時
+            label.text = String(sender.tag)    // ラベルに押したボタンの数字を表示
+            numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
             performingMath = false
         } else {
-            label.text = label.text! + String(sender.tag)
-            numberOnScreen = Double(label.text!)!
+            //
+            label.text = label.text! + String(sender.tag)    // すでに表示されている数字に押した数字を追加
+            numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
         }
+        inValue = true    // 数値が入力されましたー！
     }
     
+    // 【記号ボタンを押した時】の処理
     @IBAction func buttonAction(_ sender: UIButton) {
-        if label.text != "" && sender.tag != 11 && sender.tag != 16 {    // 数字が表示されていた場合の処理
-            // ラベルが空白の時、＝を押した時、Cを押した時以外
-            // previousNumber に表示されている数字を代入
-            previousNumber = Double(label.text!)!
+        if label.text != "" && sender.tag != 11 && sender.tag != 16 {
+            // 【ラベルが空白の時、＝を押した時、Cを押した時以外】
+            if inValue {
+                // 数値が入力されていた場合のみ
+                previousNumber = Double(label.text!)!    // previousNumber に表示されている数字を代入
+            }
             
             // ラベルに記号を表示
             if sender.tag == 12 {    // +
@@ -50,22 +57,26 @@ class ViewController: UIViewController {
             } else if sender.tag == 15 {    // ÷
                 label.text = "+"
             }
-            
             // operation に、押した四則計算のタグ番号を代入
             operation = sender.tag
-            
             // 計算できるよー
             performingMath = true
+            // 数値じゃないよー
+            inValue = false
             
         } else if sender.tag == 16 {
-            // = が押されたとき
-            if operation == 12 {
-                let num = String(previousNumber / numberOnScreen).components(separatedBy: ".")
-                if num[1] == "0" {
-                    // 少数でない時
-                    label.text = num[0]
+            // 【= が押されたとき】
+            if operation == 12 {    // 割り算の時
+                if numberOnScreen == 0 {    // 0で割ってたら
+                    label.text = "エラー"    // エラーだよ
                 } else {
-                    label.text = String(previousNumber / numberOnScreen)
+                    let num = String(previousNumber / numberOnScreen).components(separatedBy: ".")
+                    if num[1] == "0" {
+                        // 少数でない時
+                        label.text = num[0]
+                    } else {
+                        label.text = String(previousNumber / numberOnScreen)
+                    }
                 }
                 
             } else if operation == 13 {
@@ -101,6 +112,8 @@ class ViewController: UIViewController {
             previousNumber = 0
             numberOnScreen = 0
             operation = 0
+            inValue = false
+            performingMath = false
         }
     }
 }
