@@ -9,12 +9,22 @@
 import UIKit
 
 class ViewController: UIViewController {
-    
-    var numberOnScreen: Double = 0    // 画面に表示されている数字
-    var previousNumber: Double = 0    // 前回表示されていた数字
-    var inValue = false    // 数値が入力されたかどうかの判断値（真偽値）
-    var performingMath = false    // 計算プロセスに進んでいいかの判断値（真偽値）
-    var operation = 0    // +, -, ×, ÷
+
+    /// 画面に表示されている数字
+    var numberOnScreen: Double = 0
+    /// 前回表示されていた数字
+    var previousNumber: Double = 0
+    /// +, -, ×, ÷
+    var operation: String = ""
+    /// 計算結果を入れる
+    var result: Double = 0
+    /// 数値が入力されたかどうかの判断
+    var inValue: Bool = false
+    /// 計算してもいいかどうかの判断
+    var performingMath: Bool = false
+    /// ラベルを編集できるかどうか
+    var editLabel: Bool = true
+
     
     @IBOutlet weak var label: UILabel!
     
@@ -25,95 +35,83 @@ class ViewController: UIViewController {
     
     // 【数字ボタンを押した時】の処理
     @IBAction func buttonNum(_ sender: UIButton) {
-        if performingMath == true {
-            // +, -, *, / が押されていた時
-            label.text = String(sender.tag)    // ラベルに押したボタンの数字を表示
-            numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
-            performingMath = false
-        } else {
-            //
-            label.text = label.text! + String(sender.tag)    // すでに表示されている数字に押した数字を追加
-            numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
+        // 演算結果の上書き防止
+        if editLabel {
+            if performingMath {
+                label.text = String(sender.tag)    // ラベルに押したボタンの数字を表示
+                numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
+                performingMath = false
+            } else {
+                label.text = label.text! + String(sender.tag)    // 既に表示されている数字におした数字を追加
+                numberOnScreen = Double(label.text!)!    // 表示されている数字を代入
+            }
         }
         inValue = true    // 数値が入力されましたー！
     }
+
     
     // 【記号ボタンを押した時】の処理
     @IBAction func buttonAction(_ sender: UIButton) {
-        if label.text != "" && sender.tag != 11 && sender.tag != 16 {
-            // 【ラベルが空白の時、＝を押した時、Cを押した時以外】
-            if inValue {
-                // 数値が入力されていた場合のみ
-                previousNumber = Double(label.text!)!    // previousNumber に表示されている数字を代入
-            }
-            
-            // ラベルに記号を表示
-            if sender.tag == 12 {    // +
-                label.text = "÷"
-            } else if sender.tag == 13 {    // -
-                label.text = "×"
-            } else if sender.tag == 14 {    // ×
-                label.text = "-"
-            } else if sender.tag == 15 {    // ÷
-                label.text = "+"
-            }
-            // operation に、押した四則計算のタグ番号を代入
-            operation = sender.tag
-            // 計算できるよー
-            performingMath = true
-            // 数値じゃないよー
-            inValue = false
-            
-        } else if sender.tag == 16 {
+        editLabel = true    // ラベル書き換え可能
+        if sender.currentTitle == "C" {
+            // 【Cが押されたとき】
+            // クリアする
+            allClear()
+        } else if inValue && sender.currentTitle == "="  {
             // 【= が押されたとき】
-            if operation == 12 {    // 割り算の時
-                if numberOnScreen == 0 {    // 0で割ってたら
-                    label.text = "エラー"    // エラーだよ
-                } else {
-                    let num = String(previousNumber / numberOnScreen).components(separatedBy: ".")
-                    if num[1] == "0" {
-                        // 少数でない時
-                        label.text = num[0]
-                    } else {
-                        label.text = String(previousNumber / numberOnScreen)
-                    }
-                }
-                
-            } else if operation == 13 {
-                let num = String(previousNumber * numberOnScreen).components(separatedBy: ".")
-                if num[1] == "0" {
-                    // 少数でない時
-                    label.text = num[0]
-                } else {
-                    label.text = String(previousNumber * numberOnScreen)
-                }
-                
-            } else if operation == 14 {
-                let num = String(previousNumber - numberOnScreen).components(separatedBy: ".")
-                if num[1] == "0" {
-                    // 少数でない時
-                    label.text = num[0]
-                } else {
-                    label.text = String(previousNumber - numberOnScreen)
-                }
-                
-            } else if operation == 15 {
-                let num = String(previousNumber + numberOnScreen).components(separatedBy: ".")
-                if num[1] == "0" {
-                    // 少数でない時
-                    label.text = num[0]
-                } else {
-                    label.text = String(previousNumber + numberOnScreen)
-                }
+            switch operation {
+            case "÷":
+                result = previousNumber / numberOnScreen
+            case "×":
+                result = previousNumber * numberOnScreen
+            case "+":
+                result = previousNumber + numberOnScreen
+            case "-":
+                result = previousNumber - numberOnScreen
+            default:
+                break
             }
-        } else if sender.tag == 11{
-            // C が押されたとき
-            label.text = ""
-            previousNumber = 0
-            numberOnScreen = 0
-            operation = 0
-            inValue = false
-            performingMath = false
+            // 整数にできるかどうか判断で使う。
+            let num: [String] = String(result).components(separatedBy: ".")
+
+            // 計算結果が無限ではない、かつ整数である時
+            if !result.isInfinite && num.last == "0" {
+                // 小数ではないとき
+                label.text = String(Int(result))
+            } else {
+                // 小数のとき
+                label.text = String(result)
+            }
+
+            // 数値が入っている
+            inValue = true
+            // 数値を足せないようにする
+            editLabel = false
+        } else {
+            // 【+, -, ×, ÷ が押されたとき】
+            // 画面に表示されている数字を変数に代入
+            if inValue {
+                previousNumber = Double(label.text!)!
+            }
+            // 「 = 」以外の演算子を表示
+            if sender.currentTitle != "=" {
+                label.text = sender.currentTitle
+            }
+            inValue = false    // 数値は入っていないよー
+            operation = sender.currentTitle!    // 演算子を覚える
+            performingMath = true    // 計算できるよー
         }
+    }
+
+    /// クリアする関数
+    func allClear() {
+        label.text = ""
+        result = 0
+        previousNumber = 0
+        numberOnScreen = 0
+        operation = ""
+        inValue = false
+        editLabel = true
+        performingMath = false
     }
 }
